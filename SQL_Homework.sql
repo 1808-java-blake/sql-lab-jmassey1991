@@ -125,8 +125,30 @@ RETURNS VARCHAR AS $most_expensive$
     SELECT most_expensive_track();
 -- 3.3 User Defined Scalar Functions
 -- Task – Create a function that returns the average price of invoiceline items in the invoiceline table
+CREATE FUNCTION average_price_invoiceline()
+RETURNS NUMERIC(10,2) AS $average_price$
+    DECLARE
+        average_price NUMERIC(10,2);
+    BEGIN
+    SELECT AVG(unitprice) FROM invoiceline INTO average_price;
+    RETURN average_price;
+    END;
+    $average_price$ LANGUAGE plpgsql;
+    
+    --running it 
+    SELECT average_price_invoiceline();
 -- 3.4 User Defined Table Valued Functions
 -- Task – Create a function that returns all employees who are born after 1968.
+CREATE FUNCTION employees_born_after_1968()
+RETURNS TABLE(
+    fn VARCHAR,
+    ln VARCHAR
+    ) AS $poop$
+    BEGIN
+    RETURN QUERY SELECT firstname, lastname FROM employee 
+    WHERE birthdate > '1968-12-31';
+    END;
+    $poop$ LANGUAGE plpgsql;
 -- 4.0 Stored Procedures
 --  In this section you will be creating and executing stored procedures. You will be creating various types of stored procedures that take input and output parameters.
 -- 4.1 Basic Stored Procedure
@@ -153,14 +175,29 @@ RETURNS VARCHAR AS $most_expensive$
 -- In this section you will be working with combing various tables through the use of joins. You will work with outer, inner, right, left, cross, and self joins.
 -- 7.1 INNER
 -- Task – Create an inner join that joins customers and orders and specifies the name of the customer and the invoiceId.
+SELECT customer.firstname, customer.lastname, invoice.invoiceid
+FROM customer
+INNER JOIN invoice ON customer.customerid = invoice.customerid;
 -- 7.2 OUTER
 -- Task – Create an outer join that joins the customer and invoice table, specifying the CustomerId, firstname, lastname, invoiceId, and total.
+SELECT customer.customerid, customer.firstname, customer.lastname, invoice.invoiceid, invoice.total
+FROM customer
+FULL OUTER JOIN invoice ON customer.customerid = invoice.customerid;
 -- 7.3 RIGHT
 -- Task – Create a right join that joins album and artist specifying artist name and title.
+SELECT artist.name, album.title
+FROM artist
+RIGHT JOIN album ON artist.artistid = album.artistid;
 -- 7.4 CROSS
 -- Task – Create a cross join that joins album and artist and sorts by artist name in ascending order.
+SELECT * FROM artist
+CROSS JOIN album
+ORDER BY artist.name ASC;
 -- 7.5 SELF
 -- Task – Perform a self-join on the employee table, joining on the reportsto column.
+SELECT * FROM employee
+AS F INNER JOIN employee 
+AS G ON F.reportsto = G.employeeid;
 
 
 
