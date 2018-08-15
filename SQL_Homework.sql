@@ -58,19 +58,71 @@ WHERE hiredate BETWEEN '2003-06-01' AND '2004-03-01';
 -- 2.7 DELETE
 -- Task – Delete a record in Customer table where the name is Robert Walter (There may be constraints that rely on this, find out how to resolve them).
 DELETE FROM invoiceline 
-WHERE invoiceid in (SELECT invoiceid FROM invoice WHERE customerid IN (SELECT customerid FROM customer WHERE firstname = 'Robert' AND lastname = 'Walter'));
+WHERE invoiceid in (
+    SELECT invoiceid FROM invoice WHERE customerid IN (
+        SELECT customerid FROM customer WHERE firstname = 'Robert' AND lastname = 'Walter'));
 DELETE FROM invoice
-WHERE customerid IN (SELECT customerid FROM customer WHERE firstname = 'Robert' AND lastname = 'Walter');
+WHERE customerid IN (
+    SELECT customerid FROM customer WHERE firstname = 'Robert' AND lastname = 'Walter');
 DELETE FROM customer 
 WHERE firstname = 'Robert' AND lastname = 'Walter';
 -- 3.0	SQL Functions
 -- In this section you will be using the Oracle system functions, as well as your own functions, to perform various actions against the database
 -- 3.1 System Defined Functions
 -- Task – Create a function that returns the current time.
+CREATE FUNCTION return_current_time () 
+RETURNS TIME AS $currenttime$
+   DECLARE
+      currenttime TIME;
+   BEGIN
+    SELECT CURRENT_TIME INTO currenttime;
+      RETURN currenttime;
+   END; 
+   $currenttime$ LANGUAGE plpgsql;
+
+   --running it 
+   SELECT return_current_time();
+
 -- Task – create a function that returns the length of a mediatype from the mediatype table
+CREATE FUNCTION return_media_length(media_name VARCHAR)
+RETURNS VARCHAR AS $media_length$
+    DECLARE
+        media_length VARCHAR;
+    BEGIN
+    SELECT LENGTH(media_name) INTO media_length;
+    RETURN media_length;
+    END;
+    $media_length$ LANGUAGE plpgsql;
+
+    --running it 
+    SELECT return_media_length((SELECT "name" FROM mediatype WHERE mediatypeid = 1));
 -- 3.2 System Defined Aggregate Functions
 -- Task – Create a function that returns the average total of all invoices
+CREATE FUNCTION average_invoice_total()
+RETURNS NUMERIC(3, 2) AS $average_total$
+    DECLARE
+        average_total NUMERIC(3, 2);
+    BEGIN
+    SELECT AVG(total) FROM invoice INTO average_total;
+    RETURN average_total;
+    END;
+    $average_total$ LANGUAGE plpgsql;
+    
+    --running it 
+    SELECT average_invoice_total();
 -- Task – Create a function that returns the most expensive track
+CREATE FUNCTION most_expensive_track()
+RETURNS VARCHAR AS $most_expensive$
+    DECLARE
+        most_expensive VARCHAR;
+    BEGIN
+    SELECT MAX(unitprice) FROM track INTO most_expensive;
+    RETURN most_expensive;
+    END;
+    $most_expensive$ LANGUAGE plpgsql;
+    
+    --running it 
+    SELECT most_expensive_track();
 -- 3.3 User Defined Scalar Functions
 -- Task – Create a function that returns the average price of invoiceline items in the invoiceline table
 -- 3.4 User Defined Table Valued Functions
