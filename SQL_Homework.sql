@@ -149,28 +149,119 @@ RETURNS TABLE(
     WHERE birthdate > '1968-12-31';
     END;
     $poop$ LANGUAGE plpgsql;
+
+    --running it
+    SELECT employees_born_after_1968();
 -- 4.0 Stored Procedures
 --  In this section you will be creating and executing stored procedures. You will be creating various types of stored procedures that take input and output parameters.
 -- 4.1 Basic Stored Procedure
 -- Task – Create a stored procedure that selects the first and last names of all the employees.
+CREATE FUNCTION first_last_name_employees()
+RETURNS TABLE (
+    fn VARCHAR,
+    ln VARCHAR
+) AS $poop$
+BEGIN 
+RETURN QUERY SELECT firstname, lastname FROM employee;
+END;
+$poop$ LANGUAGE plpgsql;
+
+--running it
+SELECT first_last_name_employees();
 -- 4.2 Stored Procedure Input Parameters
 -- Task – Create a stored procedure that updates the personal information of an employee.
+CREATE FUNCTION update_employee()
+RETURNS VOID AS $voidpoop$
+BEGIN
+UPDATE employee SET title = 'Resonable Manager'
+WHERE employeeid = 1;
+END;
+$voidpoop$ LANGUAGE plpgsql;
+
+--running it
+SELECT update_employee();
 -- Task – Create a stored procedure that returns the managers of an employee.
+CREATE FUNCTION get_manager(employid INT)
+RETURNS INT AS $mangerid$
+    DECLARE
+        mangerid INT;
+    BEGIN
+    SELECT reportsto FROM employee 
+    WHERE employid = employeeid INTO mangerid;
+    RETURN mangerid;
+    END;
+    $mangerid$ LANGUAGE plpgsql;
+
+    --running it
+    SELECT get_manager(4);
 -- 4.3 Stored Procedure Output Parameters
 -- Task – Create a stored procedure that returns the name and company of a customer.
+CREATE FUNCTION get_company(custid INT)
+RETURNS VARCHAR AS $company_name$
+    DECLARE
+        company_name VARCHAR;
+    BEGIN
+    SELECT company FROM customer 
+    WHERE customerid = custid INTO company_name;
+    RETURN company_name;
+    END;
+    $company_name$ LANGUAGE plpgsql;
+
+    --running it
+    SELECT get_company(5);
 -- 5.0 Transactions
 -- In this section you will be working with transactions. Transactions are usually nested within a stored procedure. You will also be working with handling errors in your SQL.
 -- Task – Create a transaction that given a invoiceId will delete that invoice (There may be constraints that rely on this, find out how to resolve them).
+CREATE FUNCTION invoice_delete(iv_id INT)
+RETURNS VOID AS $voidpoop$
+BEGIN
+DELETE FROM invoiceline
+WHERE invoiceid IN (SELECT invoiceid FROM invoice WHERE invoiceid = iv_id);
+DELETE FROM invoice 
+WHERE invoiceid = iv_id;
+END;
+$voidpoop$ LANGUAGE plpgsql;
+
+--running it
+SELECT invoice_delete(1);
 -- Task – Create a transaction nested within a stored procedure that inserts a new record in the Customer table
+CREATE FUNCTION new_customer()
+RETURNS VOID AS $voidpoop$
+BEGIN
+INSERT INTO customer
+VALUES (80, 'Hate', 'Fear', 'Plumbus', '321 YesDaddy', 'PlagueCity', 'TX', 'US and A', '34543', '903-234-2345', '456-457-2334', 'grabme@gmail.com', 5);
+END;
+$voidpoop$ LANGUAGE plpgsql;
+
+--running it
+SELECT new_customer();
 -- 6.0 Triggers
 -- In this section you will create various kinds of triggers that work when certain DML statements are executed on a table.
 -- 6.1 AFTER/FOR
 -- Task - Create an after insert trigger on the employee table fired after a new record is inserted into the table.
--- Task – Create an after update trigger on the album table that fires after a row is inserted in the table
--- Task – Create an after delete trigger on the customer table that fires after a row is deleted from the table.
+CREATE TRIGGER after_new_employee
+AFTER INSERT ON employee
+FOR EACH ROW
+EXECUTE PROCEDURE suppress_redundant_updates_trigger();
 
+-- Task – Create an after update trigger on the album table that fires after a row is inserted in the table
+CREATE TRIGGER after_new_ablum
+AFTER UPDATE OR INSERT ON album
+FOR EACH ROW
+EXECUTE PROCEDURE suppress_redundant_updates_trigger();
+-- Task – Create an after delete trigger on the customer table that fires after a row is deleted from the table.
+CREATE TRIGGER after_delete_customer
+AFTER DELETE ON customer
+FOR EACH ROW
+EXECUTE PROCEDURE suppress_redundant_updates_trigger();
 -- 6.2 INSTEAD OF
 -- Task – Create an instead of trigger that restricts the deletion of any invoice that is priced over 50 dollars.
+CREATE VIEW invoice_totals AS SELECT total FROM invoice WHERE total > 50;
+
+CREATE TRIGGER instead_of_delete_invoice
+INSTEAD OF DELETE ON invoice_totals
+FOR EACH ROW
+EXECUTE PROCEDURE suppress_redundant_updates_trigger();
 -- 7.0 JOINS
 -- In this section you will be working with combing various tables through the use of joins. You will work with outer, inner, right, left, cross, and self joins.
 -- 7.1 INNER
